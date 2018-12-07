@@ -21,7 +21,7 @@ Who speaks at VanJS? **You do!** Here are the guidelines we use to guide what ta
 - Even though VanJS content is most often aimed at intermediate developers, VanJS is an inclusive event and we get lots of bright and aspiring new developers attending. Speakers should not condescend new developers or people coming from different development backgrounds.
 
 ## Speakers
-- VanJS has not done a good enough job on speaker diversity historically, so in our outreach it’s worth putting in extra effort to contact potential speakers who may be from underrepresented groups in tech. More diverse speakers bring out more diverse audiences, which is good for the group and Vancouver’s tech community as a whole.
+- VanJS has not done a good enough job on speaker diversity historically, so we are putting in extra effort to contact potential speakers who may be from underrepresented groups in tech. Diverse talent adds strength and resilience to the creative process. More diverse speakers bring out more diverse audiences, which is good for the group and Vancouver’s tech community as a whole.
 - It’s nice to have one speaker from out of town. Not every VanJS needs an out of town speaker, but reaching out to folks who are known in the JS community and inviting them to present helps attract new attendees to VanJS, increasing the diversity and liveliness of the group.
 - Obviously, speakers and their presentations must abide by our code of conduct.
 
