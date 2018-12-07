@@ -10,7 +10,7 @@ Who speaks at VanJS? **You do!** Here are the guidelines we use to guide what ta
 - **Presentation and Topic Coordinator:** Shawn McKay
 
 ## Topics
-- Ideally a feature presentation tells some kind of story. Often it has a beginning, middle, and an end – stereotypically that would be a problem, some lessons, resulting in a new way of looking at things.
+- Ideally a feature presentation tells some kind of story, with a beginning, middle, and an end. For example: a problem, some lessons learned, and the new way of looking at things that came out of it.
 - New and exciting features and APIs released by browsers and popular JS frameworks are perennial popular topics.
 - Ambitious projects and demos also make good talks. If your project is getting the browser to do something that is rather hard, or people wouldn’t expect to work in a browser, there’s often a good presentation to be had there.
 - Hard-won lessons make good talks as well. If your team tried something, and it was hard – whether it succeeded or failed – you likely learned something you could share.
