@@ -26,4 +26,4 @@ Who speaks at VanJS? **You do!** Here are the guidelines we use to guide what ta
 - Obviously, speakers and their presentations must abide by our code of conduct.
 
 ## Proposing a Talk
-Inspired by [SeattleJS](https://github.com/seattlejs/seattlejs/blob/master/request-to-speak.md), we’re trialling taking talk proposals via GitHub issues. If you have a topic you’d like to present, [head on over to our issues](/cambiecollective/vanjs/issues) and make a pitch!
+Inspired by [SeattleJS](https://github.com/seattlejs/seattlejs/blob/master/request-to-speak.md), we’re trialling taking talk proposals via GitHub issues. If you have a topic you’d like to present, [head on over to our issues](https://www.github.com/cambiecollective/vanjs/issues) and make a pitch!
