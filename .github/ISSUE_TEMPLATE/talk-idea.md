@@ -24,4 +24,4 @@ For more info on VanJS talk topics, check out our [SPEAKING.md](https://github.c
 - **Mini-bio:** (Tweet length is fine)
 - **Would you like help with your presentation?** (feedback on notes, practice run)
 - **Social media link(s):** (twitter, website, linkedin, etc.)
-- **Do you agree to the [VanJS Code of Conduct](https://github.com/cambiecollective/vanjs/blob/master/SPEAKING.md)?**
+- **Do you agree to the [VanJS Code of Conduct](https://github.com/cambiecollective/vanjs/blob/master/CONDUCT.md)?**
