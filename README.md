@@ -14,7 +14,7 @@ VanJS has been a community production since 2009. Our high-level goals are:
 
 ## Code of Conduct
 
-We have a **[Code of Conduct](https://github.com/cambiecollective/vanjs/blob/master/SPEAKING.md)**. It's short and sweet, so please give it a read.
+We have a **[Code of Conduct](https://github.com/cambiecollective/vanjs/blob/master/CONDUCT.md)**. It's short and sweet, so please give it a read.
 
 ## Speaking
 
