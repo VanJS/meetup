@@ -25,4 +25,4 @@ For more info on VanJS talk topics, check out our [SPEAKING.md](https://github.c
 - **Would you like help with your presentation?** (feedback on notes, practice run)
 - **Social media link(s):** (twitter, website, linkedin, etc.)
 - **Do you agree to the [VanJS Code of Conduct](https://github.com/cambiecollective/vanjs/blob/master/CONDUCT.md)?**
-- **Which dates are you likely available?** (2nd, 3rd or 4th Thursday of each month)
+-- **Which dates, particularly Thursdays, are you likely available?** (e.g. "Most Thursdays with 4 weeks notice", "June or later", etc.)
