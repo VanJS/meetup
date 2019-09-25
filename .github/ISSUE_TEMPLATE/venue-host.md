@@ -1,6 +1,6 @@
 ---
 name: Host request
-about: Host an upcoming vanJS event at your venue
+about: Host an upcoming VanJS event at your venue
 title: 'Host request: '
 labels: Host
 assignees: ''
