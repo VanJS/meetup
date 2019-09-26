@@ -17,7 +17,7 @@ Address or neighbourhood:
 
 Available capacity:
 
-Does the venue have an AV (Audio/Video) system: (or microphones?)
+Does the venue have an AV (Audio/Video) system: (or what additional equipment is needed)
 
 Presentation screen size:
 
