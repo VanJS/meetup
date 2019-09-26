@@ -9,11 +9,13 @@ assignees: ''
 
 ## Information
 
+> Please note meetups are typically during 2nd or 3rd week of month on Tue/Wed/Thu evening from 6:00-8:30pm
+
 Company name:
 
 Address or neighbourhood:
 
-Available capcity:
+Available capacity:
 
 Does the venue have an AV (Audio/Video) system: (or microphones?)
 
