@@ -24,4 +24,8 @@ We have a **[Code of Conduct](https://github.com/cambiecollective/vanjs/blob/mas
 We have a **[Speaking at VanJS Guide](https://github.com/cambiecollective/vanjs/blob/master/SPEAKING.md)**! Check it out, then propose a talk you'd like to share with the group.
 
 
-Have suggestions, thoughts, or input? We've been [chatting on Spectrum](https://spectrum.chat/vanjs), or get in touch via [@vanjs on Twitter](https://twitter.com/vanjs/).
+Have suggestions, thoughts, or input? 
+
+[![Chat on Slack](https://img.shields.io/badge/slack-vanjs-blue.svg?logo=slack&style=flat)](https://vanjs.slack.com)
+![Twitter Follow](https://img.shields.io/twitter/follow/vanjs?style=social)
+
