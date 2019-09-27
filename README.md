@@ -1,8 +1,8 @@
-# vanjs
+# VanJS
 
 This is the open source home for [VanJS](http://www.vanjs.com/), the Vancouver JavaScript Developers meetup! 👩🏽‍💻👨🏼‍💻
 
-![vanjs-square](https://github.com/cambiecollective/vanjs/blob/master/VanJS-Square-spacer.png)
+![vanjs-logo](/assets/VanJS.png)
 
 VanJS is now in the hands of the community – starting with documenting some of our approaches and thinking on how the meetup works, and getting an open and collaborative talk selection and scheduling system going.
 
