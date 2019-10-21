@@ -17,11 +17,11 @@ VanJS has been a community production since 2009. Our high-level goals are:
 
 ## Code of Conduct
 
-We have a **[Code of Conduct](https://github.com/cambiecollective/vanjs/blob/master/CONDUCT.md)**. It's short and sweet, so please give it a read.
+We have a **[Code of Conduct](https://github.com/VanJS/meetup/blob/master/CONDUCT.md)**. It's short and sweet, so please give it a read.
 
 ## Speaking
 
-We have a **[Speaking at VanJS Guide](https://github.com/cambiecollective/vanjs/blob/master/SPEAKING.md)**! Check it out, then propose a talk you'd like to share with the group.
+We have a **[Speaking at VanJS Guide](https://github.com/VanJS/meetup/blob/master/SPEAKING.md)**! Check it out, then propose a talk you'd like to share with the group.
 
 
 Have suggestions, thoughts, or input? 
