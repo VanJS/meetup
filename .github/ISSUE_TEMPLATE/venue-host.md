@@ -2,7 +2,7 @@
 name: Host request
 about: Host an upcoming VanJS event at your venue
 title: 'Host request: '
-labels: Host
+labels: ''
 assignees: ''
 
 ---
