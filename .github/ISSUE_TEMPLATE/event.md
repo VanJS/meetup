@@ -12,6 +12,9 @@ assignees: ''
   - **Decription:**
 <!-- preferably in first 2 weeks of the month -->
 - [] **Date/Time:**
+- [] **MC host:**
+<!-- link to slides  -->
+- [] **Event Slides:**
 <!-- link to talk proposals  -->
 - [] **Speaker 1:** 
 - [] **Speaker 2:** 
