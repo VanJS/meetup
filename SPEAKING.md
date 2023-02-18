@@ -1,12 +1,11 @@
 # Speaking at VanJS
 
-A typical VanJS event has two presentation slots, each between 20 and 45 minutes long. Each slot may be either filled by a feature talk, or by a set of 2-4 lightning talks of roughly 5 minutes each.
+A typical VanJS event has 2-3 presentation slots, each between 10 and 20 minutes long. Each slot may be either filled by a feature talk, or by a set of 2-4 lightning talks of roughly 5 minutes each.
 
 Who speaks at VanJS? **You do!** Here are the guidelines we use to guide what talks we schedule, so you can consider what you’d like to present on.
 
-*As of December, 2018*
+*As of February, 2023*
 
-- **Speaker Lead Generator:** Jeremy Gonzalez
 - **Presentation and Topic Coordinator:** Shawn McKay
 
 ## Topics
