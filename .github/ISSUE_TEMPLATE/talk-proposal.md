@@ -8,7 +8,7 @@ assignees: ''
 ---
 
 - **Draft Title:** 
-- **Length:** (5 min lightning talk, or 20-45 min full presentation)
+- **Length:** (5 min lightning talk, or 10-20 min full presentation)
 - **Links:** (slides, article, notes)
 - **Which dates, particularly Tue/Wed/Thu during the 2nd/3rd week of a month, are you likely available?** (e.g. "Most Thursdays with 4 weeks notice", "June or later", etc.)
 
