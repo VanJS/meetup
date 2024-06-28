@@ -22,7 +22,8 @@ For more info on VanJS talk topics, check out our [SPEAKING.md](https://github.c
 
 ### Speaker Bio
 - **Name:** 
-- **Mini-bio:** (Tweet length is fine)
-- **Would you like help with your presentation?** (feedback on notes, practice run)
+- **Mini-bio:** (This is the introduction our emcee will give about you, one paragraph is usually best)
+- **Picture for slides:** (We like to include a picture of each speaker in our slides for the event intro)
+- **Would you like help with your presentation?** (Feedback on notes, practice run)
 - **Social media link(s):** (twitter, website, linkedin, etc.)
 - **Do you agree to the [VanJS Code of Conduct](https://github.com/VanJS/meetup/blob/master/CONDUCT.md)?**
