@@ -168,7 +168,7 @@ jobs:
           
           // Create comment body with checkboxes
           const updateTime = new Date().toISOString();
-          let commentBody = `${BOT_MARKER}\n<!-- updated: ${updateTime} -->\n## 📅 Available Presentation Dates\n\nPick up to 2 dates to give your talk:\n\n`;
+          let commentBody = `${BOT_MARKER}\n<!-- updated: ${updateTime} -->\n## 📅 Available Presentation Dates\n\nSelect your preferred dates for your talk:\n\n`;
           
           for (const milestone of eligibleMilestones) {
             const date = new Date(milestone.due_on).toLocaleDateString('en-US', {
@@ -181,7 +181,7 @@ jobs:
             commentBody += `- [ ] **${date}** (${milestone.title}) - ${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} available\n`;
           }
           
-          commentBody += "\n---\n*Please check the boxes next to your preferred dates. A maintainer will assign you to a meetup once you've made your selection.*";
+          commentBody += "\n---\n*Please check the boxes next to your preferred dates. A maintainer will assign you to a meetup once you've made your selections.*";
           
           // Add update notice if this is a re-run
           if (isUpdate) {
