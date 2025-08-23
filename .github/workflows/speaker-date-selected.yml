@@ -1,7 +1,7 @@
 name: Speaker Date Selected Notification
 on:
   issue_comment:
-    types: [created, edited]
+    types: [edited]
 
 jobs:
   notify-maintainers:
