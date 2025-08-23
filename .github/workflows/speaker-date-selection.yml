@@ -74,11 +74,17 @@ jobs:
                 owner,
                 repo,
                 milestone: milestone.number,
-                state: 'open',
-                labels: 'Talk,Demo'
+                state: 'open'
               });
               
-              const talkDemoCount = issuesInMilestone.data.length;
+              // Filter for issues with Talk or Demo labels
+              const talkDemoIssues = issuesInMilestone.data.filter(issue => 
+                issue.labels.some(label => 
+                  label.name === 'Talk' || label.name === 'Demo'
+                )
+              );
+              
+              const talkDemoCount = talkDemoIssues.length;
               
               if (talkDemoCount < 3) {
                 eligibleMilestones.push({
