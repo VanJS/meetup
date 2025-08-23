@@ -6,6 +6,7 @@ on:
 jobs:
   notify-maintainers:
     runs-on: ubuntu-latest
+    environment: Meetup
     if: |
       contains(github.event.issue.labels.*.name, 'Talk') || 
       contains(github.event.issue.labels.*.name, 'Demo')
