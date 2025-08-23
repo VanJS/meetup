@@ -51,18 +51,18 @@ jobs:
               return;
             }
             
-            // For 'labeled' events (Event label), check if last comment was within an hour
+            // For 'labeled' events (Event label), check if last comment was within 5 minutes
             const lastBotComment = botComments[botComments.length - 1];
             const lastCommentTime = new Date(lastBotComment.created_at);
             const now = new Date();
-            const hoursSinceLastComment = (now - lastCommentTime) / (1000 * 60 * 60);
+            const minutesSinceLastComment = (now - lastCommentTime) / (1000 * 60);
             
-            if (hoursSinceLastComment < 1) {
-              console.log(`⏰ Last comment was ${hoursSinceLastComment.toFixed(2)} hours ago, skipping (minimum 1 hour)`);
+            if (minutesSinceLastComment < 5) {
+              console.log(`⏰ Last comment was ${minutesSinceLastComment.toFixed(1)} minutes ago, skipping (minimum 5 minutes)`);
               return;
             }
             
-            console.log(`✅ Last comment was ${hoursSinceLastComment.toFixed(2)} hours ago, proceeding with update`);
+            console.log(`✅ Last comment was ${minutesSinceLastComment.toFixed(1)} minutes ago, proceeding with update`);
             isUpdate = true;
           }
           
@@ -111,8 +111,8 @@ jobs:
           // Filter eligible milestones
           const eligibleMilestones = [];
           const now = new Date();
-          const sixMonthsFromNow = new Date();
-          sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+          // Add 180 days instead of 6 months to avoid month overflow issues
+          const sixMonthsFromNow = new Date(now.getTime() + (180 * 24 * 60 * 60 * 1000));
           
           for (const milestone of milestonesResponse.data) {
             // Skip milestones without due dates or that don't end with 'Meetup'
@@ -139,12 +139,6 @@ jobs:
           
           if (eligibleMilestones.length === 0) {
             console.log('⚠️ No eligible milestones found');
-            
-            // Don't post duplicate "no dates" message if one was posted recently
-            if (botComments.length > 0 && !isUpdate) {
-              console.log('⏭️ Already posted about no dates, skipping');
-              return;
-            }
             
             // Post a message indicating no dates are available
             const updateTime = new Date().toISOString();
