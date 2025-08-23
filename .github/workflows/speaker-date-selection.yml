@@ -7,7 +7,6 @@ jobs:
   comment-dates:
     runs-on: ubuntu-latest
     if: |
-      (github.event.action == 'opened' && (contains(github.event.issue.labels.*.name, 'Talk') || contains(github.event.issue.labels.*.name, 'Demo'))) ||
       (github.event.action == 'labeled' && (contains(github.event.issue.labels.*.name, 'Talk') || contains(github.event.issue.labels.*.name, 'Demo')))
     
     env:
