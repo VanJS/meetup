@@ -1,0 +1,118 @@
+name: Speaker Date Selection
+on:
+  issues:
+    types: [opened, labeled]
+
+jobs:
+  comment-dates:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event.action == 'opened' && (contains(github.event.issue.labels.*.name, 'Talk') || contains(github.event.issue.labels.*.name, 'Demo'))) ||
+      (github.event.action == 'labeled' && github.event.label.name == 'Event' && (contains(github.event.issue.labels.*.name, 'Talk') || contains(github.event.issue.labels.*.name, 'Demo')))
+    
+    env:
+      SPEAKER_DATE_SELECTION_ENABLED: ${{ vars.SPEAKER_DATE_SELECTION_ENABLED || 'true' }}
+    
+    steps:
+    - name: Check if automation is enabled
+      if: env.SPEAKER_DATE_SELECTION_ENABLED != 'true'
+      run: |
+        echo "Speaker date selection is disabled"
+        exit 0
+        
+    - name: Get milestones and post date options
+      if: env.SPEAKER_DATE_SELECTION_ENABLED == 'true'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const { owner, repo } = context.repo;
+          
+          // Check if comment already exists to prevent duplicates
+          const existingComments = await github.rest.issues.listComments({
+            owner,
+            repo,
+            issue_number: context.issue.number
+          });
+          
+          const hasDateComment = existingComments.data.some(comment => 
+            comment.body.includes('Pick up to 2 dates to give your talk')
+          );
+          
+          if (hasDateComment) {
+            console.log('Date selection comment already exists, skipping');
+            return;
+          }
+          
+          // Get all open milestones
+          const milestones = await github.rest.issues.listMilestones({
+            owner,
+            repo,
+            state: 'open'
+          });
+          
+          console.log(`Found ${milestones.data.length} open milestones`);
+          
+          // Filter milestones that end with "Meetup" (not "Social") and have <3 issues
+          const eligibleMilestones = [];
+          
+          for (const milestone of milestones.data) {
+            // Skip milestones without due dates or that don't end with 'Meetup'
+            if (!milestone.due_on || !milestone.title.endsWith('Meetup') || milestone.open_issues >= 3) {
+              continue;
+            }
+            
+            // Only include future dates
+            const dueDate = new Date(milestone.due_on);
+            if (dueDate > new Date()) {
+              eligibleMilestones.push({
+                title: milestone.title,
+                due_on: milestone.due_on,
+                open_issues: milestone.open_issues
+              });
+            }
+          }
+          
+          console.log(`Found ${eligibleMilestones.length} eligible milestones`);
+          
+          if (eligibleMilestones.length === 0) {
+            console.log('No eligible milestones found');
+            
+            // Post a message indicating no dates are available
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: context.issue.number,
+              body: '⚠️ No available meetup dates found. Please contact the organizers to schedule your presentation.'
+            });
+            return;
+          }
+          
+          // Sort by due date
+          eligibleMilestones.sort((a, b) => new Date(a.due_on) - new Date(b.due_on));
+          
+          // Create comment body with checkboxes
+          let commentBody = "## 📅 Available Presentation Dates\n\nPick up to 2 dates to give your talk:\n\n";
+          
+          for (const milestone of eligibleMilestones) {
+            const date = new Date(milestone.due_on).toLocaleDateString('en-US', {
+              weekday: 'long',
+              year: 'numeric', 
+              month: 'long',
+              day: 'numeric'
+            });
+            const spotsLeft = 3 - milestone.open_issues;
+            commentBody += `- [ ] **${date}** (${milestone.title}) - ${spotsLeft} spot${spotsLeft !== 1 ? 's' : ''} available\n`;
+          }
+          
+          commentBody += "\n---\n*Please check the boxes next to your preferred dates. A maintainer will assign you to a meetup once you've made your selection.*";
+          
+          // Post comment on the issue
+          await github.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: context.issue.number,
+            body: commentBody
+          });
+          
+          console.log('Posted date selection comment');
