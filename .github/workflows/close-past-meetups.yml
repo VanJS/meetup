@@ -1,0 +1,188 @@
+name: Close Past Meetups
+on:
+  schedule:
+    # Run daily at 10 AM PST (6 PM UTC)
+    - cron: '0 18 * * *'
+  workflow_dispatch: # Allow manual triggering
+
+jobs:
+  close-past-meetups:
+    runs-on: ubuntu-latest
+    
+    env:
+      MEETUP_CLEANUP_ENABLED: ${{ vars.MEETUP_CLEANUP_ENABLED || 'true' }}
+    
+    steps:
+    - name: Check if cleanup is enabled
+      if: env.MEETUP_CLEANUP_ENABLED != 'true'
+      run: |
+        echo "🚫 Meetup cleanup is disabled"
+        exit 0
+        
+    - name: Close past meetups and their issues
+      if: env.MEETUP_CLEANUP_ENABLED == 'true'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const { owner, repo } = context.repo;
+          
+          // Get all open milestones
+          const milestones = await github.rest.issues.listMilestones({
+            owner,
+            repo,
+            state: 'open',
+            per_page: 100
+          });
+          
+          console.log(`📅 Found ${milestones.data.length} open milestones`);
+          
+          // Use PST/PDT timezone for date comparisons
+          const now = new Date();
+          
+          // Get current PST/PDT time (handles daylight saving automatically)
+          const pstNowString = now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+          const pstNow = new Date(pstNowString);
+          
+          // Calculate one day ago in PST/PDT
+          const oneDayAgoPST = new Date(pstNow.getTime() - (24 * 60 * 60 * 1000));
+          
+          console.log(`🕒 Current time (PST/PDT): ${pstNowString}`);
+          console.log(`📅 Looking for milestones due before: ${oneDayAgoPST.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' })}`);
+          
+          // Safety check: ensure we're not in a dry-run mode
+          const isDryRun = '${{ vars.CLEANUP_DRY_RUN }}' === 'true';
+          if (isDryRun) {
+            console.log(`🧪 DRY RUN MODE - No changes will be made`);
+          }
+          
+          let closedMilestones = 0;
+          let closedIssues = 0;
+          let wouldCloseMilestones = 0;
+          let wouldCloseIssues = 0;
+          
+          for (const milestone of milestones.data) {
+            // Skip milestones without due dates
+            if (!milestone.due_on) {
+              console.log(`⏭️ Skipping "${milestone.title}" - no due date`);
+              continue;
+            }
+            
+            // Convert milestone due date to PST for comparison
+            const dueDateUTC = new Date(milestone.due_on);
+            const dueDatePSTString = dueDateUTC.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' });
+            const dueDatePST = new Date(dueDatePSTString);
+            
+            // Close if due date was 1+ days ago (comparing in PST)
+            if (dueDatePST <= oneDayAgoPST) {
+              console.log(`🎯 Processing milestone: "${milestone.title}" (due: ${dueDatePSTString})`);
+              
+              // Get all issues in this milestone
+              const issues = await github.rest.issues.listForRepo({
+                owner,
+                repo,
+                milestone: milestone.number,
+                state: 'open',
+                per_page: 100
+              });
+              
+              console.log(`📋 Found ${issues.data.length} open issues in milestone`);
+              
+              // Close all open issues in the milestone
+              for (const [index, issue] of issues.data.entries()) {
+                try {
+                  // Check if this is a speaker issue (Talk or Demo)
+                  const isSpeakerIssue = issue.labels.some(label => 
+                    label.name === 'Talk' || label.name === 'Demo'
+                  );
+                  
+                  let closingMessage;
+                  if (isSpeakerIssue) {
+                    // Special thank you message for speakers
+                    closingMessage = `🎉 **Thank you for speaking at ${milestone.title}!**\n\n` +
+                      `@${issue.user.login}, your presentation was a valuable contribution to the VanJS community. ` +
+                      `We appreciate you taking the time to share your knowledge and expertise with everyone.\n\n` +
+                      `**Next Steps:**\n` +
+                      `- If you have slides or code to share, feel free to add them as a comment\n` +
+                      `- Consider joining our community discussions for future meetups\n` +
+                      `- We'd love to have you speak again in the future!\n\n` +
+                      `This issue is being automatically closed as ${milestone.title} has concluded.\n\n` +
+                      `*🤖 Automated cleanup with gratitude by VanJS Meetup Bot*`;
+                  } else {
+                    // General closing message for other issues
+                    closingMessage = `🎉 This meetup has concluded! Thanks to everyone who participated. ` +
+                      `This issue is being automatically closed as the milestone "${milestone.title}" has passed.\n\n` +
+                      `*🤖 Automated cleanup by VanJS Meetup Bot*`;
+                  }
+                  
+                  const issueType = isSpeakerIssue ? 'speaker issue' : 'issue';
+                  
+                  if (isDryRun) {
+                    console.log(`🧪 DRY RUN: Would close ${issueType} #${issue.number}: "${issue.title}"`);
+                    wouldCloseIssues++;
+                  } else {
+                    // Actually close the issue and post comment
+                    await github.rest.issues.update({
+                      owner,
+                      repo,
+                      issue_number: issue.number,
+                      state: 'closed'
+                    });
+                    
+                    await github.rest.issues.createComment({
+                      owner,
+                      repo,
+                      issue_number: issue.number,
+                      body: closingMessage
+                    });
+                    
+                    console.log(`✅ Closed ${issueType} #${issue.number}: "${issue.title}"`);
+                    closedIssues++;
+                  }
+                  
+                  // Rate limiting: small delay between issues (except last one)
+                  if (index < issues.data.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000)); // 1 second delay
+                  }
+                } catch (error) {
+                  console.log(`❌ Failed to close issue #${issue.number}: ${error.message}`);
+                }
+              }
+              
+              // Close the milestone
+              try {
+                if (isDryRun) {
+                  console.log(`🧪 DRY RUN: Would close milestone: "${milestone.title}"`);
+                  wouldCloseMilestones++;
+                } else {
+                  await github.rest.issues.updateMilestone({
+                    owner,
+                    repo,
+                    milestone_number: milestone.number,
+                    state: 'closed'
+                  });
+                  
+                  console.log(`🏁 Closed milestone: "${milestone.title}"`);
+                  closedMilestones++;
+                }
+              } catch (error) {
+                console.log(`❌ Failed to close milestone "${milestone.title}": ${error.message}`);
+              }
+            } else {
+              console.log(`⏳ Keeping milestone "${milestone.title}" open (due: ${dueDatePSTString})`);
+            }
+          }
+          
+          console.log(`\n📊 ${isDryRun ? 'DRY RUN ' : ''}Cleanup Summary:`);
+          if (isDryRun) {
+            console.log(`🧪 Would have closed ${wouldCloseMilestones} milestone(s) and ${wouldCloseIssues} issue(s)`);
+            if (wouldCloseMilestones === 0 && wouldCloseIssues === 0) {
+              console.log(`🎯 No past meetups found - everything is up to date!`);
+            }
+          } else {
+            console.log(`🏁 Closed ${closedMilestones} milestone(s)`);
+            console.log(`✅ Closed ${closedIssues} issue(s)`);
+            if (closedMilestones === 0 && closedIssues === 0) {
+              console.log(`🎯 No past meetups found - everything is up to date!`);
+            }
+          }
