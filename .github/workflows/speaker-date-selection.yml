@@ -138,12 +138,31 @@ jobs:
           if (eligibleMilestones.length === 0) {
             console.log('No eligible milestones found');
             
+            // Don't post duplicate "no dates" message if one was posted recently
+            if (botComments.length > 0 && !isUpdate) {
+              console.log('Already posted about no dates, skipping');
+              return;
+            }
+            
             // Post a message indicating no dates are available
+            const updateTime = new Date().toISOString();
+            let noDateBody = `<!-- speaker-date-selection-bot -->\n<!-- updated: ${updateTime} -->\n⚠️ No available meetup dates found. Please contact the organizers to schedule your presentation.`;
+            
+            if (isUpdate) {
+              noDateBody += "\n\n<sub>✨ Checked at " + new Date().toLocaleString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+              }) + "</sub>";
+            }
+            
             await github.rest.issues.createComment({
               owner,
               repo,
               issue_number: context.issue.number,
-              body: '<!-- speaker-date-selection-bot -->\n⚠️ No available meetup dates found. Please contact the organizers to schedule your presentation.'
+              body: noDateBody
             });
             return;
           }
