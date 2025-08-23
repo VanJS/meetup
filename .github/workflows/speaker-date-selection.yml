@@ -58,18 +58,35 @@ jobs:
           
           for (const milestone of milestones.data) {
             // Skip milestones without due dates or that don't end with 'Meetup'
-            if (!milestone.due_on || !milestone.title.endsWith('Meetup') || milestone.open_issues >= 3) {
+            if (!milestone.due_on || !milestone.title.endsWith('Meetup')) {
               continue;
             }
             
-            // Only include future dates
+            // Only include future dates within next 6 months
             const dueDate = new Date(milestone.due_on);
-            if (dueDate > new Date()) {
-              eligibleMilestones.push({
-                title: milestone.title,
-                due_on: milestone.due_on,
-                open_issues: milestone.open_issues
+            const now = new Date();
+            const sixMonthsFromNow = new Date();
+            sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
+            
+            if (dueDate > now && dueDate <= sixMonthsFromNow) {
+              // Count Talk/Demo issues specifically
+              const issuesInMilestone = await github.rest.issues.listForRepo({
+                owner,
+                repo,
+                milestone: milestone.number,
+                state: 'open',
+                labels: 'Talk,Demo'
               });
+              
+              const talkDemoCount = issuesInMilestone.data.length;
+              
+              if (talkDemoCount < 3) {
+                eligibleMilestones.push({
+                  title: milestone.title,
+                  due_on: milestone.due_on,
+                  open_issues: talkDemoCount
+                });
+              }
             }
           }
           
