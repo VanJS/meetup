@@ -63,19 +63,7 @@ jobs:
             return;
           }
           
-          if (checkedBoxes.length > 2) {
-            // Post a warning comment
-            await github.rest.issues.createComment({
-              owner,
-              repo,
-              issue_number: issue.number,
-              body: '⚠️ Please select only up to 2 dates. You currently have ' + checkedBoxes.length + ' dates selected.'
-            });
-            console.log(`⚠️ Too many dates selected (${checkedBoxes.length}), posted warning`);
-            return;
-          }
-          
-          console.log(`✅ ${checkedBoxes.length} date(s) selected`);
+          console.log(`✅ ${dateLines.length} date(s) selected`);
           
           // Check for existing notification to prevent duplicates
           const existingComments = await github.rest.issues.listComments({
@@ -162,6 +150,16 @@ jobs:
           });
           
           console.log('📬 Posted maintainer notification comment');
+          
+          // Post confirmation message to the speaker
+          await github.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: issue.number,
+            body: `👋 Thanks @${issue.user.login}! You've selected ${selectedDates.length} date${selectedDates.length !== 1 ? 's' : ''}. A VanJS maintainer will get back to you shortly to confirm your presentation slot! 🎉`
+          });
+          
+          console.log('✅ Posted confirmation message to speaker');
           
           // Send email notification if configured
           if (emailList && '${{ secrets.SENDGRID_API_KEY }}') {
