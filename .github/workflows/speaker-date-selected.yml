@@ -1,0 +1,224 @@
+name: Speaker Date Selected Notification
+on:
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  notify-maintainers:
+    runs-on: ubuntu-latest
+    if: |
+      contains(github.event.issue.labels.*.name, 'Talk') || 
+      contains(github.event.issue.labels.*.name, 'Demo')
+    
+    env:
+      SPEAKER_NOTIFICATIONS_ENABLED: ${{ vars.SPEAKER_NOTIFICATIONS_ENABLED || 'true' }}
+    
+    steps:
+    - name: Check if notifications are enabled
+      if: env.SPEAKER_NOTIFICATIONS_ENABLED != 'true'
+      run: |
+        echo "🚫 Speaker notifications are disabled"
+        exit 0
+        
+    - name: Check for date selections and notify maintainers
+      if: env.SPEAKER_NOTIFICATIONS_ENABLED == 'true'
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const { owner, repo } = context.repo;
+          const BOT_MARKER = '<!-- speaker-date-selection-bot -->';
+          
+          // Only process comments that contain our bot marker (date selection comments)
+          if (!context.payload.comment.body.includes(BOT_MARKER)) {
+            console.log('💬 Comment is not a date selection comment, skipping');
+            return;
+          }
+          
+          // Only process if the comment was edited (someone checked boxes)
+          if (context.payload.action !== 'edited') {
+            console.log('📝 Comment was created (not edited), skipping');
+            return;
+          }
+          
+          const comment = context.payload.comment;
+          const issue = context.payload.issue;
+          
+          // Check if any checkboxes are selected
+          const checkedBoxes = comment.body.match(/- \[x\]/gi);
+          const uncheckedBoxes = comment.body.match(/- \[ \]/gi);
+          
+          if (!checkedBoxes || checkedBoxes.length === 0) {
+            console.log('❌ No dates selected, skipping notification');
+            return;
+          }
+          
+          // Only notify if there are actual date checkboxes (not just any checkboxes)
+          const dateLines = comment.body.split('\n').filter(line => 
+            line.includes('- [x]') && line.includes('**') && line.includes('(') && line.includes('Meetup)')
+          );
+          
+          if (dateLines.length === 0) {
+            console.log('❌ No date selections found, skipping notification');
+            return;
+          }
+          
+          if (checkedBoxes.length > 2) {
+            // Post a warning comment
+            await github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: issue.number,
+              body: '⚠️ Please select only up to 2 dates. You currently have ' + checkedBoxes.length + ' dates selected.'
+            });
+            console.log(`⚠️ Too many dates selected (${checkedBoxes.length}), posted warning`);
+            return;
+          }
+          
+          console.log(`✅ ${checkedBoxes.length} date(s) selected`);
+          
+          // Check for existing notification to prevent duplicates
+          const existingComments = await github.rest.issues.listComments({
+            owner,
+            repo,
+            issue_number: issue.number
+          });
+          
+          // Look for recent maintainer notification (within last hour to allow updates)
+          const recentNotifications = existingComments.data.filter(comment => {
+            const isBot = comment.user.type === 'Bot';
+            const isNotification = comment.body.includes('🎯 Speaker Date Selection Alert');
+            const isRecent = (new Date() - new Date(comment.created_at)) < (60 * 60 * 1000); // 1 hour
+            return isBot && isNotification && isRecent;
+          });
+          
+          if (recentNotifications.length > 0) {
+            console.log('⏭️ Recent maintainer notification already exists, skipping');
+            return;
+          }
+          
+          // Get list of maintainers from repository variables
+          // Format: comma-separated list like "username1,username2,username3"
+          const maintainersList = '${{ vars.MAINTAINERS }}' || '';
+          const emailList = '${{ vars.MAINTAINER_EMAILS }}' || '';
+          
+          if (!maintainersList && !emailList) {
+            console.log('⚠️ No maintainers configured in MAINTAINERS or MAINTAINER_EMAILS variables');
+            return;
+          }
+          
+          // Extract selected dates from the comment
+          const lines = comment.body.split('\n');
+          const selectedDates = [];
+          
+          for (const line of lines) {
+            if (line.includes('- [x]')) {
+              const dateMatch = line.match(/\*\*(.*?)\*\*/);
+              if (dateMatch) {
+                selectedDates.push(dateMatch[1]);
+              }
+            }
+          }
+          
+          // Create notification comment
+          let notificationBody = `## 🎯 Speaker Date Selection Alert\n\n`;
+          notificationBody += `**Speaker**: @${issue.user.login}\n`;
+          notificationBody += `**Issue**: ${issue.title}\n`;
+          notificationBody += `**Selected Dates**:\n`;
+          
+          selectedDates.forEach(date => {
+            notificationBody += `- ✅ ${date}\n`;
+          });
+          
+          notificationBody += `\n---\n`;
+          
+          // Mention GitHub maintainers if configured
+          if (maintainersList) {
+            const maintainers = maintainersList.split(',').map(m => m.trim()).filter(Boolean);
+            if (maintainers.length > 0) {
+              notificationBody += `**Maintainers**: ` + maintainers.map(m => `@${m}`).join(' ') + '\n';
+              notificationBody += `Please review and assign this speaker to a milestone.\n\n`;
+            }
+          }
+          
+          // Add email notification info if configured
+          if (emailList) {
+            notificationBody += `📧 *Email notifications will be sent to configured maintainer addresses.*\n\n`;
+          }
+          
+          notificationBody += `**Next Steps**:\n`;
+          notificationBody += `1. Review the speaker's proposal and selected dates\n`;
+          notificationBody += `2. Assign this issue to the appropriate milestone\n`;
+          notificationBody += `3. Add the "Scheduled" label\n`;
+          notificationBody += `4. Remove the "Event" label (if present)\n\n`;
+          notificationBody += `*🤖 This is an automated notification. The speaker has selected their preferred dates.*`;
+          
+          // Post the notification comment
+          await github.rest.issues.createComment({
+            owner,
+            repo,
+            issue_number: issue.number,
+            body: notificationBody
+          });
+          
+          console.log('📬 Posted maintainer notification comment');
+          
+          // Send email notification if configured
+          if (emailList && '${{ secrets.SENDGRID_API_KEY }}') {
+            const emails = emailList.split(',').map(e => e.trim()).filter(Boolean);
+            
+            for (const email of emails) {
+              const emailPayload = {
+                personalizations: [{
+                  to: [{ email: email }],
+                  subject: `🎯 Speaker Selected Dates: ${issue.title}`
+                }],
+                from: { 
+                  email: '${{ vars.FROM_EMAIL }}' || 'noreply@vanjs.com',
+                  name: 'VanJS Meetup Bot'
+                },
+                content: [{
+                  type: 'text/html',
+                  value: `
+                    <h2>🎯 Speaker Date Selection Alert</h2>
+                    <p><strong>Speaker:</strong> ${issue.user.login}</p>
+                    <p><strong>Issue:</strong> <a href="${issue.html_url}">${issue.title}</a></p>
+                    <p><strong>Selected Dates:</strong></p>
+                    <ul>${selectedDates.map(date => `<li>✅ ${date}</li>`).join('')}</ul>
+                    <hr>
+                    <p><strong>Next Steps:</strong></p>
+                    <ol>
+                      <li>Review the speaker's proposal and selected dates</li>
+                      <li>Assign this issue to the appropriate milestone</li>
+                      <li>Add the "Scheduled" label</li>
+                      <li>Remove the "Event" label (if present)</li>
+                    </ol>
+                    <p><em>🤖 This is an automated notification from the VanJS Meetup Bot.</em></p>
+                  `
+                }]
+              };
+              
+              try {
+                const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${{ secrets.SENDGRID_API_KEY }}`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(emailPayload)
+                });
+                
+                if (response.ok) {
+                  console.log(`📧 Email sent successfully to ${email}`);
+                } else {
+                  console.log(`❌ Failed to send email to ${email}: ${response.status}`);
+                }
+              } catch (error) {
+                console.log(`❌ Error sending email to ${email}: ${error.message}`);
+              }
+            }
+          } else if (emailList) {
+            const emails = emailList.split(',').map(e => e.trim()).filter(Boolean);
+            console.log(`📧 Email list configured (${emails.join(', ')}) but SENDGRID_API_KEY secret not found`);
+            console.log('📝 Add SENDGRID_API_KEY secret to enable email notifications');
+          }
