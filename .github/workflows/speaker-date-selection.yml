@@ -35,28 +35,84 @@ jobs:
             issue_number: context.issue.number
           });
           
-          const hasDateComment = existingComments.data.some(comment => 
-            comment.body.includes('Pick up to 2 dates to give your talk')
+          // Look for our bot comments
+          const botComments = existingComments.data.filter(comment => 
+            (comment.user.type === 'Bot' && comment.body.includes('<!-- speaker-date-selection-bot -->')) ||
+            comment.body.includes('Available Presentation Dates')
           );
           
-          if (hasDateComment) {
-            console.log('Date selection comment already exists, skipping');
-            return;
+          let isUpdate = false;
+          if (botComments.length > 0) {
+            // For 'opened' events, never allow duplicates
+            if (context.payload.action === 'opened') {
+              console.log('Date selection comment already exists on new issue, skipping');
+              return;
+            }
+            
+            // For 'labeled' events (Event label), check if last comment was within an hour
+            const lastBotComment = botComments[botComments.length - 1];
+            const lastCommentTime = new Date(lastBotComment.created_at);
+            const now = new Date();
+            const hoursSinceLastComment = (now - lastCommentTime) / (1000 * 60 * 60);
+            
+            if (hoursSinceLastComment < 1) {
+              console.log(`Last comment was ${hoursSinceLastComment.toFixed(2)} hours ago, skipping (minimum 1 hour)`);
+              return;
+            }
+            
+            console.log(`Last comment was ${hoursSinceLastComment.toFixed(2)} hours ago, proceeding with update`);
+            isUpdate = true;
           }
           
-          // Get all open milestones
-          const milestones = await github.rest.issues.listMilestones({
+          // Get all open milestones and all open issues with Talk/Demo labels in parallel
+          const [milestonesResponse, issuesResponse] = await Promise.all([
+            github.rest.issues.listMilestones({
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100
+            }),
+            github.rest.issues.listForRepo({
+              owner,
+              repo,
+              state: 'open',
+              labels: 'Talk',
+              per_page: 100
+            })
+          ]);
+          
+          // Also get Demo labeled issues
+          const demoIssuesResponse = await github.rest.issues.listForRepo({
             owner,
             repo,
-            state: 'open'
+            state: 'open',
+            labels: 'Demo',
+            per_page: 100
           });
           
-          console.log(`Found ${milestones.data.length} open milestones`);
+          // Combine Talk and Demo issues, removing duplicates
+          const allTalkDemoIssues = [...issuesResponse.data, ...demoIssuesResponse.data];
+          const uniqueIssues = Array.from(
+            new Map(allTalkDemoIssues.map(issue => [issue.id, issue])).values()
+          );
           
-          // Filter milestones that end with "Meetup" (not "Social") and have <3 issues
+          // Count issues per milestone
+          const issueCounts = {};
+          for (const issue of uniqueIssues) {
+            if (issue.milestone) {
+              issueCounts[issue.milestone.number] = (issueCounts[issue.milestone.number] || 0) + 1;
+            }
+          }
+          
+          console.log(`Found ${milestonesResponse.data.length} open milestones`);
+          
+          // Filter eligible milestones
           const eligibleMilestones = [];
+          const now = new Date();
+          const sixMonthsFromNow = new Date();
+          sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
           
-          for (const milestone of milestones.data) {
+          for (const milestone of milestonesResponse.data) {
             // Skip milestones without due dates or that don't end with 'Meetup'
             if (!milestone.due_on || !milestone.title.endsWith('Meetup')) {
               continue;
@@ -64,27 +120,8 @@ jobs:
             
             // Only include future dates within next 6 months
             const dueDate = new Date(milestone.due_on);
-            const now = new Date();
-            const sixMonthsFromNow = new Date();
-            sixMonthsFromNow.setMonth(sixMonthsFromNow.getMonth() + 6);
-            
             if (dueDate > now && dueDate <= sixMonthsFromNow) {
-              // Count Talk/Demo issues specifically
-              const issuesInMilestone = await github.rest.issues.listForRepo({
-                owner,
-                repo,
-                milestone: milestone.number,
-                state: 'open'
-              });
-              
-              // Filter for issues with Talk or Demo labels
-              const talkDemoIssues = issuesInMilestone.data.filter(issue => 
-                issue.labels.some(label => 
-                  label.name === 'Talk' || label.name === 'Demo'
-                )
-              );
-              
-              const talkDemoCount = talkDemoIssues.length;
+              const talkDemoCount = issueCounts[milestone.number] || 0;
               
               if (talkDemoCount < 3) {
                 eligibleMilestones.push({
@@ -106,7 +143,7 @@ jobs:
               owner,
               repo,
               issue_number: context.issue.number,
-              body: '⚠️ No available meetup dates found. Please contact the organizers to schedule your presentation.'
+              body: '<!-- speaker-date-selection-bot -->\n⚠️ No available meetup dates found. Please contact the organizers to schedule your presentation.'
             });
             return;
           }
@@ -115,7 +152,8 @@ jobs:
           eligibleMilestones.sort((a, b) => new Date(a.due_on) - new Date(b.due_on));
           
           // Create comment body with checkboxes
-          let commentBody = "## 📅 Available Presentation Dates\n\nPick up to 2 dates to give your talk:\n\n";
+          const updateTime = new Date().toISOString();
+          let commentBody = `<!-- speaker-date-selection-bot -->\n<!-- updated: ${updateTime} -->\n## 📅 Available Presentation Dates\n\nPick up to 2 dates to give your talk:\n\n`;
           
           for (const milestone of eligibleMilestones) {
             const date = new Date(milestone.due_on).toLocaleDateString('en-US', {
@@ -129,6 +167,17 @@ jobs:
           }
           
           commentBody += "\n---\n*Please check the boxes next to your preferred dates. A maintainer will assign you to a meetup once you've made your selection.*";
+          
+          // Add update notice if this is a re-run
+          if (isUpdate) {
+            commentBody += "\n\n<sub>✨ Updated availability at " + new Date().toLocaleString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            }) + "</sub>";
+          }
           
           // Post comment on the issue
           await github.rest.issues.createComment({
