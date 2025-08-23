@@ -2,7 +2,7 @@
 name: Demo Proposal
 about: Propose a new VanJS demo.
 title: 'Demo Proposal: '
-labels: 'demo'
+labels: 'Demo'
 assignees: ''
 
 ---

@@ -2,7 +2,7 @@
 name: Talk Proposal
 about: Propose a new VanJS presentation.
 title: 'Talk Proposal: '
-labels: ''
+labels: 'Talk'
 assignees: ''
 
 ---
