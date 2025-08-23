@@ -17,7 +17,7 @@ jobs:
     - name: Check if automation is enabled
       if: env.SPEAKER_DATE_SELECTION_ENABLED != 'true'
       run: |
-        echo "Speaker date selection is disabled"
+        echo "🚫 Speaker date selection is disabled"
         exit 0
         
     - name: Get milestones and post date options
@@ -27,6 +27,7 @@ jobs:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
           const { owner, repo } = context.repo;
+          const BOT_MARKER = '<!-- speaker-date-selection-bot -->';
           
           // Check if comment already exists to prevent duplicates
           const existingComments = await github.rest.issues.listComments({
@@ -37,15 +38,16 @@ jobs:
           
           // Look for our bot comments
           const botComments = existingComments.data.filter(comment => 
-            (comment.user.type === 'Bot' && comment.body.includes('<!-- speaker-date-selection-bot -->')) ||
-            comment.body.includes('Available Presentation Dates')
+            comment.user.type === 'Bot' && 
+            (comment.body.includes(BOT_MARKER) || 
+             comment.body.includes('Available Presentation Dates'))
           );
           
           let isUpdate = false;
           if (botComments.length > 0) {
             // For 'opened' events, never allow duplicates
             if (context.payload.action === 'opened') {
-              console.log('Date selection comment already exists on new issue, skipping');
+              console.log('⏭️ Date selection comment already exists on new issue, skipping');
               return;
             }
             
@@ -56,11 +58,11 @@ jobs:
             const hoursSinceLastComment = (now - lastCommentTime) / (1000 * 60 * 60);
             
             if (hoursSinceLastComment < 1) {
-              console.log(`Last comment was ${hoursSinceLastComment.toFixed(2)} hours ago, skipping (minimum 1 hour)`);
+              console.log(`⏰ Last comment was ${hoursSinceLastComment.toFixed(2)} hours ago, skipping (minimum 1 hour)`);
               return;
             }
             
-            console.log(`Last comment was ${hoursSinceLastComment.toFixed(2)} hours ago, proceeding with update`);
+            console.log(`✅ Last comment was ${hoursSinceLastComment.toFixed(2)} hours ago, proceeding with update`);
             isUpdate = true;
           }
           
@@ -104,7 +106,7 @@ jobs:
             }
           }
           
-          console.log(`Found ${milestonesResponse.data.length} open milestones`);
+          console.log(`📅 Found ${milestonesResponse.data.length} open milestones`);
           
           // Filter eligible milestones
           const eligibleMilestones = [];
@@ -133,20 +135,20 @@ jobs:
             }
           }
           
-          console.log(`Found ${eligibleMilestones.length} eligible milestones`);
+          console.log(`✨ Found ${eligibleMilestones.length} eligible milestones`);
           
           if (eligibleMilestones.length === 0) {
-            console.log('No eligible milestones found');
+            console.log('⚠️ No eligible milestones found');
             
             // Don't post duplicate "no dates" message if one was posted recently
             if (botComments.length > 0 && !isUpdate) {
-              console.log('Already posted about no dates, skipping');
+              console.log('⏭️ Already posted about no dates, skipping');
               return;
             }
             
             // Post a message indicating no dates are available
             const updateTime = new Date().toISOString();
-            let noDateBody = `<!-- speaker-date-selection-bot -->\n<!-- updated: ${updateTime} -->\n⚠️ No available meetup dates found. Please contact the organizers to schedule your presentation.`;
+            let noDateBody = `${BOT_MARKER}\n<!-- updated: ${updateTime} -->\n⚠️ No available meetup dates found. Please contact the organizers to schedule your presentation.`;
             
             if (isUpdate) {
               noDateBody += "\n\n<sub>✨ Checked at " + new Date().toLocaleString('en-US', { 
@@ -172,7 +174,7 @@ jobs:
           
           // Create comment body with checkboxes
           const updateTime = new Date().toISOString();
-          let commentBody = `<!-- speaker-date-selection-bot -->\n<!-- updated: ${updateTime} -->\n## 📅 Available Presentation Dates\n\nPick up to 2 dates to give your talk:\n\n`;
+          let commentBody = `${BOT_MARKER}\n<!-- updated: ${updateTime} -->\n## 📅 Available Presentation Dates\n\nPick up to 2 dates to give your talk:\n\n`;
           
           for (const milestone of eligibleMilestones) {
             const date = new Date(milestone.due_on).toLocaleDateString('en-US', {
@@ -206,4 +208,4 @@ jobs:
             body: commentBody
           });
           
-          console.log('Posted date selection comment');
+          console.log('✅ Posted date selection comment');
